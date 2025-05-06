@@ -2,6 +2,7 @@ package mock
 
 import (
 	"errors"
+	"log"
 	"sync"
 	"time"
 	"todo-app-project/internal/domain"
@@ -23,13 +24,12 @@ func NewTodoItemMockRepository() *TodoItemMockRepository {
 func (r *TodoItemMockRepository) Create(todoItem *domain.TodoItem) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	now := time.Now()
 	todoItem.ID = r.nextID
-	todoItem.CreatedAt = now
-	todoItem.UpdatedAt = now
+	todoItem.CreatedAt = time.Now()
+	todoItem.UpdatedAt = time.Now()
 	r.todoItems[todoItem.ID] = todoItem
 	r.nextID++
+	log.Printf("TodoItemMockRepository.Create: Item created. ID: %d, ListID: %d, Content: %s, UserID: %d", todoItem.ID, todoItem.ListID, todoItem.Content, todoItem.UserID) //UserID logu eklendi
 	return nil
 }
 
@@ -62,12 +62,12 @@ func (r *TodoItemMockRepository) SoftDelete(id int) error {
 func (r *TodoItemMockRepository) GetByID(id int) (*domain.TodoItem, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-
-	todoItem, exists := r.todoItems[id]
-	if !exists || todoItem.IsDeleted() {
+	item, exists := r.todoItems[id]
+	log.Printf("TodoItemMockRepository.GetByID: id: %d, exists: %t, item: %v", id, exists, item)
+	if !exists || item.IsDeleted() {
 		return nil, errors.New("todo item not found")
 	}
-	return todoItem, nil
+	return item, nil
 }
 
 func (r *TodoItemMockRepository) GetByListID(listID int) ([]*domain.TodoItem, error) {

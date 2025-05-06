@@ -2,6 +2,7 @@ package mock
 
 import (
 	"errors"
+	"log"
 	"sync"
 	"time"
 	"todo-app-project/internal/domain"
@@ -21,7 +22,6 @@ func NewTodoListMockRepository(itemRepo domain.TodoItemRepository) *TodoListMock
 		nextID:       1,
 	}
 }
-
 func (r *TodoListMockRepository) Create(todoList *domain.TodoList) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -32,6 +32,7 @@ func (r *TodoListMockRepository) Create(todoList *domain.TodoList) error {
 	todoList.UpdatedAt = now
 	r.todoLists[todoList.ID] = todoList
 	r.nextID++
+	log.Printf("TodoListMockRepository.Create: Liste oluşturuldu. ID: %d, UserID: %d, Name: %s", todoList.ID, todoList.UserID, todoList.Name) // Log eklendi
 	return nil
 }
 
@@ -62,15 +63,24 @@ func (r *TodoListMockRepository) SoftDelete(id int) error {
 	return nil
 
 }
-
 func (r *TodoListMockRepository) GetAll(userID int) ([]*domain.TodoList, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	var todoLists []*domain.TodoList
-	for _, todoList := range r.todoLists {
-		if !todoList.IsDeleted() && todoList.UserID == userID {
-			todoLists = append(todoLists, todoList)
+	if userID == 0 {
+		// Admin kullanıcısı için TÜM listeleri getir
+		for _, list := range r.todoLists {
+			if !list.IsDeleted() { //Silinmemiş listeleri getiriyoruz.
+				todoLists = append(todoLists, list)
+			}
+		}
+	} else {
+		// Normal kullanıcı için sadece kendi listelerini getir
+		for _, list := range r.todoLists {
+			if !list.IsDeleted() && list.UserID == userID {
+				todoLists = append(todoLists, list)
+			}
 		}
 	}
 	return todoLists, nil

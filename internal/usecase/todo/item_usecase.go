@@ -2,6 +2,7 @@ package todo
 
 import (
 	"errors"
+	"log"
 	"time"
 	"todo-app-project/internal/domain"
 )
@@ -19,20 +20,28 @@ func NewTodoItemUseCase(todoItemRepo domain.TodoItemRepository, todoListRepo dom
 }
 
 func (u *TodoItemUseCase) Create(userID, listID int, content string) error {
-	todoList, err := u.todoListRepo.GetByID(listID) // TodoList'i ID'sine göre alırız
+	log.Printf("TodoItemUseCase.Create: userID: %d, listID: %d, content: %s", userID, listID, content)
+	todoList, err := u.todoListRepo.GetByID(listID)
 	if err != nil {
-		return err // hata varsa döneriz
+		log.Printf("TodoItemUseCase.Create: TodoListRepo.GetByID failed: %v", err)
+		return err
 	}
 	if todoList.UserID != userID {
-		return errors.New("not authorized") // yetkisiz erişim hatası döneriz
+		log.Println("TodoItemUseCase.Create: not authorized")
+		return errors.New("not authorized")
 	}
 	todoItem := &domain.TodoItem{
 		ListID:    listID,
 		Content:   content,
 		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    userID, // Bu satırı ekleyin
 	}
-	return u.todoItemRepo.Create(todoItem) // TodoItem'i oluştururuz
+	err = u.todoItemRepo.Create(todoItem)
+	log.Printf("TodoItemUseCase.Create: TodoItemRepo.Create result: %v", err)
+	return err
 }
+
 func (u *TodoItemUseCase) Update(userID, itemID int, newContent string) error {
 	todoItem, err := u.todoItemRepo.GetByID(itemID) // TodoItem'i ID'sine göre alırız
 	if err != nil {
@@ -89,13 +98,18 @@ func (u *TodoItemUseCase) CompleteItem(userID, itemID int) error {
 	return u.todoItemRepo.CompleteItem(itemID) // TodoItem'i tamamlanmış olarak işaretleriz
 
 }
+
 func (u *TodoItemUseCase) GetByID(userID, id int) (*domain.TodoItem, error) {
+	log.Printf("TodoItemUseCase.GetByID: userID: %d, id: %d", userID, id)
 	item, err := u.todoItemRepo.GetByID(id)
 	if err != nil {
+		log.Printf("TodoItemUseCase.GetByID: todoItemRepo.GetByID failed: %v", err)
 		return nil, err
 	}
 	if item.UserID != userID {
+		log.Println("TodoItemUseCase.GetByID: not authorized to view this item")
 		return nil, errors.New("not authorized to view this item")
 	}
+	log.Printf("TodoItemUseCase.GetByID: Returning item: %v", item)
 	return item, nil
 }

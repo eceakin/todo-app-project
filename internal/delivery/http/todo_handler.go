@@ -2,6 +2,7 @@ package http
 
 import (
 	"encoding/json"
+	"log" // Import log paketi eklendi
 	"net/http"
 	"strconv"
 	"todo-app-project/internal/usecase/todo"
@@ -10,8 +11,8 @@ import (
 )
 
 type TodoHandler struct {
-	itemUsecase *todo.TodoItemUseCase // TodoUseCase arayüzü
-	listUsecase *todo.ListUseCase     // ItemUseCase arayüzü
+	itemUsecase *todo.TodoItemUseCase
+	listUsecase *todo.ListUseCase
 }
 
 func NewTodoHandler(listUC *todo.ListUseCase, itemUC *todo.TodoItemUseCase) *TodoHandler {
@@ -21,37 +22,46 @@ func NewTodoHandler(listUC *todo.ListUseCase, itemUC *todo.TodoItemUseCase) *Tod
 	}
 }
 
-// -- list endpointleri -- //
-
 func (h *TodoHandler) CreateList(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(ContextUserID).(int) // context'ten userID'yi alırız
+	userIDValue := r.Context().Value(ContextUserID) // Değeri bir değişkene atadık
+	userID, ok := userIDValue.(int)
+	log.Printf("CreateList: Context'ten alınan UserID değeri: %v, Başarılı mı: %t", userIDValue, ok) // Loglama eklendi
+	if !ok {
+		http.Error(w, "userID not found in context", http.StatusUnauthorized)
+		return
+	}
 
 	var body struct {
-		Name string `json:"name"` // isim alanı
+		Name string `json:"name"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest) // hata varsa döneriz
+		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 	if err := h.listUsecase.Create(userID, body.Name); err != nil {
-		http.Error(w, "failed to create list", http.StatusInternalServerError) // hata varsa döneriz
+		http.Error(w, "failed to create list", http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusCreated) // 201 Created döneriz
+	w.WriteHeader(http.StatusCreated)
 }
 
+// ... diğer handler fonksiyonları ...
 func (h *TodoHandler) GetList(w http.ResponseWriter, r *http.Request) {
-	userID := r.Context().Value(ContextUserID).(int) // context'ten userID'yi alırız
-	role := r.Context().Value(ContextRole).(string)  // context'ten rolü alırız
-	isAdmin := role == "admin"                       // admin olup olmadığını kontrol ederiz
+	log.Println("GetList: Fonksiyon çağrıldı")
+	userID := r.Context().Value(ContextUserID).(int)
+	role := r.Context().Value(ContextRole).(string)
+	isAdmin := role == "admin"
 
-	lists, err := h.listUsecase.GetAll(userID, isAdmin) // tüm listeleri alırız
+	log.Printf("GetList: userID: %d, isAdmin: %t", userID, isAdmin)
+	lists, err := h.listUsecase.GetAll(userID, isAdmin)
 	if err != nil {
-		http.Error(w, "failed to get lists", http.StatusInternalServerError) // hata varsa döneriz
+		log.Printf("GetList: Hata: %v", err)
+		http.Error(w, "failed to get lists", http.StatusInternalServerError)
 		return
 	}
-	json.NewEncoder(w).Encode(lists) // listeleri döneriz
+	log.Printf("GetList: Alınan listeler: %v", lists)
+	json.NewEncoder(w).Encode(lists)
 
 }
 func (h *TodoHandler) UpdateList(w http.ResponseWriter, r *http.Request) {
@@ -156,13 +166,23 @@ func (h *TodoHandler) GetItemsByListID(w http.ResponseWriter, r *http.Request) {
 }
 func (h *TodoHandler) GetItemByID(w http.ResponseWriter, r *http.Request) {
 	userID := r.Context().Value(ContextUserID).(int)
-	itemID, _ := strconv.Atoi(mux.Vars(r)["id"])
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	itemID, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Printf("GetItemByID: Invalid item ID: %s", idStr)
+		http.Error(w, "Invalid item ID", http.StatusBadRequest)
+		return
+	}
+	log.Printf("GetItemByID: userID: %d, itemID: %d", userID, itemID) // Log eklendi
 
 	item, err := h.itemUsecase.GetByID(userID, itemID)
 	if err != nil {
+		log.Printf("GetItemByID: itemUsecase.GetByID failed: %v", err)
 		http.Error(w, "failed to get item", http.StatusInternalServerError)
 		return
 	}
+	log.Printf("GetItemByID: Retrieved item: %v", item) // Log eklendi
 	json.NewEncoder(w).Encode(item)
 }
 func (h *TodoHandler) CalculateCompletionRateHandler(w http.ResponseWriter, r *http.Request) {
