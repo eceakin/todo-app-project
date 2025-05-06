@@ -1,8 +1,8 @@
 package domain
 
 type TodoListRepository interface {
-	Create(todoList *TodoList) (TodoList, error)
-	Update(todoList *TodoList) (TodoList, error)
+	Create(todoList *TodoList) error
+	Update(todoList *TodoList) error
 	SoftDelete(id int) error
 	GetByID(id int) (*TodoList, error)
 	GetAll(userID int) ([]*TodoList, error)
