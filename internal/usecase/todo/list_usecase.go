@@ -59,3 +59,6 @@ func (l *ListUseCase) GetAll(userID int, isAdmin bool) ([]*domain.TodoList, erro
 	}
 	return l.todolistRepo.GetAll(userID)
 }
+func (l *ListUseCase) CalculateCompletionRate(listID int) (float64, error) {
+	return l.todolistRepo.CalculateCompletionRate(listID)
+}

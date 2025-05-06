@@ -8,15 +8,17 @@ import (
 )
 
 type TodoListMockRepository struct {
-	todoLists map[int]*domain.TodoList
-	mu        sync.Mutex
-	nextID    int
+	todoLists    map[int]*domain.TodoList
+	todoItemRepo domain.TodoItemRepository
+	mu           sync.Mutex
+	nextID       int
 }
 
-func NewTodoListMockRepository() *TodoListMockRepository {
+func NewTodoListMockRepository(itemRepo domain.TodoItemRepository) *TodoListMockRepository {
 	return &TodoListMockRepository{
-		todoLists: make(map[int]*domain.TodoList),
-		nextID:    1,
+		todoLists:    make(map[int]*domain.TodoList),
+		todoItemRepo: itemRepo,
+		nextID:       1,
 	}
 }
 
@@ -83,4 +85,31 @@ func (r *TodoListMockRepository) GetByID(id int) (*domain.TodoList, error) {
 		return nil, errors.New("todo list not found")
 	}
 	return todoList, nil
+}
+func (r *TodoListMockRepository) CalculateCompletionRate(listID int) (float64, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	todoList, exists := r.todoLists[listID]
+	if !exists || todoList.IsDeleted() {
+		return 0, errors.New("todo list not found")
+	}
+
+	items, err := r.todoItemRepo.GetByListID(listID)
+	if err != nil {
+		return 0, err
+	}
+	if len(items) == 0 {
+		return 0, nil
+	}
+
+	completed := 0
+	for _, item := range items {
+		if item.IsCompleted {
+			completed++
+		}
+	}
+
+	rate := (float64(completed) / float64(len(items))) * 100
+	return rate, nil
 }
