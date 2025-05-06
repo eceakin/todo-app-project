@@ -1,3 +1,11 @@
+![Go](https://img.shields.io/badge/Go-1.20%2B-blue?style=for-the-badge&logo=go)
+![Status](https://img.shields.io/badge/Status-Completed-brightgreen?style=for-the-badge)
+![License](https://img.shields.io/badge/License-Educational-lightgrey?style=for-the-badge)
+![Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture-yellow?style=for-the-badge)
+![Mock](https://img.shields.io/badge/Data-Mock%20Repository-orange?style=for-the-badge)
+
+
+
 # 📝 TO-DO App REST API (GoLang - Clean Architecture)
 
 Bu proje, Go programlama dili ile geliştirilmiş bir TO-DO uygulaması REST API’sidir. Clean Architecture yapısına uygun olarak organize edilmiştir. Kullanıcılar yapılacaklar listesi oluşturabilir ve bu listelere adımlar (item) ekleyebilir. Her bir adım tamamlandıkça, listenin tamamlama oranı hesaplanabilir.
