@@ -30,7 +30,7 @@ Bu proje, Go programlama dili ile geliştirilmiş bir TO-DO uygulaması REST API
 | user          | user  | User  |
 | guest         | guest | User  |
 
-> 🔐 **Admin:** Tüm verilere erişebilir.
+> 🔐 **Admin:** Tüm verilere erişebilir.  
 > 👤 **User:** Sadece kendi verileriyle işlem yapabilir.
 
 ---
